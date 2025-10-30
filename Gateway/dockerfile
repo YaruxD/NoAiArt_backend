@@ -1,0 +1,23 @@
+FROM python:3.12.7-slim
+
+WORKDIR /app
+
+COPY pyproject.toml poetry.lock ./
+
+RUN pip install --no-cache-dir poetry \
+    && poetry config virtualenvs.create false \
+    && poetry install --no-root --no-interaction --no-ansi
+
+COPY . .
+
+ENV PORT=8000
+ENV AUTH_SERVICE_HOST = auth_service
+ENV AUTH_SERVICE_PORT = 8000
+ENV JWT_ALGORITHM = RS256
+
+ENV JWT_PUBLIC_KEY_PATH="src/keys/public.pem"
+
+
+EXPOSE 8000
+
+CMD ["sh", "-c", "uvicorn src.gateway.main:app --host 0.0.0.0 --port ${PORT} --reload"]

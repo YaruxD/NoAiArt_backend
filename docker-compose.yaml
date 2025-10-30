@@ -1,0 +1,70 @@
+services:
+  auth_postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: postgres_noaiart_auth
+      POSTGRES_USER: auth_postgres
+      POSTGRES_PASSWORD: 97121104
+    ports:
+      - "10000:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - auth-network
+    healthcheck:  
+      test: ["CMD-SHELL", "pg_isready -U auth_postgres -d postgres_noaiart_auth"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  auth_service:
+    build: AuthService
+    environment:
+      PORT: 8000
+      DB_USER: auth_postgres
+      DB_PASSWORD: 97121104
+      DB_HOST: auth_postgres
+      DB_PORT: 5432
+      DB_NAME: postgres_noaiart_auth
+      JWT_ALGORITHM: RS256
+      JWT_PRIVATE_KEY_PATH: "src/keys/private.pem"
+      JWT_PUBLIC_KEY_PATH: "src/keys/public.pem"
+    ports:
+      - "8001:8000"
+    volumes:
+      - ./AuthService/src:/app/src
+      - ./AuthService/alembic:/app/alembic
+    depends_on:
+      auth_postgres:
+        condition: service_healthy 
+    networks:
+      - auth-network
+      - gateway-network
+
+
+  gateway:
+    build: Gateway
+    environment:
+      JWT_ALGORITHM: RS256
+      AUTH_SERVICE_HOST: auth_service
+      AUTH_SERVICE_PORT: 8000
+      JWT_PUBLIC_KEY_PATH: "src/keys/public.pem"
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./Gateway/src:/app/src 
+    depends_on: 
+      - auth_service
+    networks:
+      - gateway-network
+
+
+volumes:
+  postgres_data:
+
+
+networks:
+  auth-network:
+    driver: bridge
+  gateway-network:
+    driver: bridge

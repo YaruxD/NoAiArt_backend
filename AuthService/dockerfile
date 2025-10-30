@@ -1,0 +1,29 @@
+FROM python:3.12.7-slim
+
+WORKDIR /app
+
+COPY pyproject.toml poetry.lock ./
+
+RUN pip install --no-cache-dir poetry \
+    && poetry config virtualenvs.create false \
+    && poetry install --no-root --no-interaction --no-ansi
+
+COPY . .
+
+
+ENV PORT=8000
+ENV DB_USER=auth_postgres
+ENV DB_PASSWORD=97121104
+ENV DB_HOST=auth_postgres
+ENV DB_PORT=5432
+ENV DB_NAME=postgres_noaiart_auth
+
+ENV JWT_ALGORITHM=RS256
+
+ENV JWT_PRIVATE_KEY_PATH="src/keys/private.pem"
+ENV JWT_PUBLIC_KEY_PATH="src/keys/public.pem"
+
+
+EXPOSE 8000
+
+CMD ["sh", "-c", "alembic upgrade head && uvicorn src.authservice.main:app --host 0.0.0.0 --port ${PORT} --reload"]

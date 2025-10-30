@@ -1,0 +1,22 @@
+[project]
+name = "gateway"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "Nokotachi",email = "none@none.none"}
+]
+readme = "README.md"
+requires-python = "=3.12.7"
+dependencies = [
+    "fastapi[all] (>=0.120.1,<0.121.0)",
+    "httpx (>=0.28.1,<0.29.0)",
+    "pydantic-settings (>=2.11.0,<3.0.0)",
+    "pydantic (>=2.12.3,<3.0.0)"
+]
+
+[tool.poetry]
+packages = [{include = "gateway", from = "src"}]
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
