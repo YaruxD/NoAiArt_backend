@@ -1,0 +1,31 @@
+FROM python:3.12.7-slim
+
+WORKDIR /app
+
+COPY pyproject.toml poetry.lock ./
+
+RUN pip install --no-cache-dir poetry \
+    && poetry config virtualenvs.create false \
+    && poetry install --no-root --no-interaction --no-ansi
+
+COPY . .
+
+
+ENV PORT=8000
+ENV DB_USER=user_postgres
+ENV DB_PASSWORD=97121104
+ENV DB_HOST=user_postgres
+ENV DB_PORT=5432
+ENV DB_NAME=postgres_noaiart_user
+
+
+ENV RBC_USER_AUTH_USER = admin
+ENV RBC_USER_AUTH_PASSWORD = 97121104
+ENV RBC_USER_AUTH_HOST = rabbitmq_user_auth
+ENV RBC_USER_AUTH_PORT = 5672
+
+
+
+EXPOSE 8000
+
+CMD ["sh", "-c", "alembic upgrade head && uvicorn src.userservice.main:app --host 0.0.0.0 --port ${PORT} --reload"]

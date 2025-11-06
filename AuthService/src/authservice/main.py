@@ -9,6 +9,7 @@ from .models import User
 from .schemas import RegistrationScheme, UserRead, TokenScheme, LogoutResponse
 from .security import hash_password
 from .auth import authuser, create_access_token, create_refresh_token, validate_refresh_token
+from .rabbitmq.producer_user_auth import send_message_to_userservice
 
 
 @asynccontextmanager
@@ -45,9 +46,13 @@ async def create_user(user: RegistrationScheme, db: AsyncSession = Depends(get_s
     )
 
     db.add(new_user)
+    
     await db.commit()
     await db.refresh(new_user)
-    
+    user_to_add = (user.dict(exclude={"password", "email"}))
+    user_to_add["id"] = new_user.id
+    await send_message_to_userservice(user_to_add)
+
     return new_user
 
 
