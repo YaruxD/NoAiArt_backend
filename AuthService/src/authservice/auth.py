@@ -1,16 +1,13 @@
-from typing import Optional, Tuple
-from fastapi import HTTPException, Depends, status
-from jose import JWTError, jwt
 from datetime import datetime, timedelta, timezone
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi.security import OAuth2PasswordBearer
 
-from .database import get_session
-from .settings import settings
+from fastapi import Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
+from jose import JWTError, jwt
+from sqlalchemy import select
+
 from .models import User
 from .security import verify_password
-
+from .settings import settings
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login")
 
@@ -20,41 +17,49 @@ JWT_PUBLIC_KEY = settings.JWT_PUBLIC_KEY
 ACCESS_TOKEN_EXPIRETIME = timedelta(minutes=15)
 REFRESH_TOKEN_EXPIRETIME = timedelta(days=7)
 
-async def create_access_token(data: dict) -> str:
 
+async def create_access_token(data: dict) -> str:
     payload = {
         "username": data["username"],
         "user_id": data["user_id"],
-        "exp": str(int((datetime.now(timezone.utc) + ACCESS_TOKEN_EXPIRETIME).timestamp())),
+        "exp": str(
+            int((datetime.now(timezone.utc) + ACCESS_TOKEN_EXPIRETIME).timestamp())
+        ),
         "type": "access",
     }
 
-    acces_token = jwt.encode(payload, key=JWT_PRIVATE_KEY, algorithm=settings.JWT_ALGORITHM)
+    acces_token = jwt.encode(
+        payload, key=JWT_PRIVATE_KEY, algorithm=settings.JWT_ALGORITHM
+    )
 
     return acces_token
 
-async def create_refresh_token(data: dict, db) -> str:
 
-    expire_time = str(int((datetime.now(timezone.utc) + REFRESH_TOKEN_EXPIRETIME).timestamp()))
+async def create_refresh_token(data: dict, db) -> str:
+    expire_time = str(
+        int((datetime.now(timezone.utc) + REFRESH_TOKEN_EXPIRETIME).timestamp())
+    )
 
     payload = {
         "username": data["username"],
         "user_id": data["user_id"],
         "exp": expire_time,
         "type": "refresh",
-        "refresh_token_version": data["refresh_token_version"]
+        "refresh_token_version": data["refresh_token_version"],
     }
 
-    refresh_token = jwt.encode(payload, key=JWT_PRIVATE_KEY, algorithm=settings.JWT_ALGORITHM)
+    refresh_token = jwt.encode(
+        payload, key=JWT_PRIVATE_KEY, algorithm=settings.JWT_ALGORITHM
+    )
 
     return refresh_token
 
-async def validate_refresh_token(token: str, db):
 
+async def validate_refresh_token(token: str, db):
     data = await decode_token(token)
     if data == None or data["type"] != "refresh":
         raise HTTPException(status_code=401, detail="Invalid token")
-    
+
     user = await db.get(User, data["user_id"])
 
     if user.refresh_token_version != data["refresh_token_version"]:
@@ -63,13 +68,11 @@ async def validate_refresh_token(token: str, db):
     return user
 
 
-
 async def decode_token(token: str) -> dict | None:
     try:
-        return jwt.decode(token, JWT_PUBLIC_KEY, algorithms = [settings.JWT_ALGORITHM])
+        return jwt.decode(token, JWT_PUBLIC_KEY, algorithms=[settings.JWT_ALGORITHM])
     except JWTError:
         return None
-
 
 
 async def authuser(username, password, db):
@@ -78,10 +81,8 @@ async def authuser(username, password, db):
 
     if not user or not await verify_password(password, user.hashed_password):
         raise HTTPException(status_code=400, detail="Invalid credentials")
-    
+
     return user
-
-
 
 
 async def get_current_user(
@@ -120,4 +121,3 @@ async def get_current_user(
         )
 
     return current_user
-
