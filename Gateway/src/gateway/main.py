@@ -1,9 +1,11 @@
 from contextlib import asynccontextmanager
+from posixpath import curdir
 
 import httpx
 from fastapi import Depends, FastAPI, HTTPException, Request, Response
 from fastapi.security import OAuth2PasswordRequestForm
 
+from .auth import get_current_user
 from .clients.auth_client import auth_client
 from .schemas import RegistrationScheme, TokenScheme, UserRead
 
@@ -77,3 +79,8 @@ async def refresh_token(request: Request, response: Response):
         raise HTTPException(
             status_code=e.response.status_code, detail=error_json["detail"]
         )
+
+
+@app.get("/me")
+async def read_me(current_user=Depends(get_current_user)):
+    return current_user
