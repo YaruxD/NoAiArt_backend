@@ -112,6 +112,50 @@ services:
       - gateway-network
       - user-network
 
+  #Pin
+  pin_postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: postgres_noaiart_pin
+      POSTGRES_USER: pin_postgres
+      POSTGRES_PASSWORD: 97121104
+    ports:
+      - "10002:5432"
+    volumes:
+      - pin_postgres_data:/var/lib/postgresql/data
+    networks:
+      - pin-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pin_postgres -d postgres_noaiart_pin"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  pin_service:
+    build: PinService
+    environment:
+      PORT: 8000
+      DB_USER: pin_postgres
+      DB_PASSWORD: 97121104
+      DB_HOST: pin_postgres
+      DB_PORT: 5432
+      DB_NAME: postgres_noaiart_pin
+      TIMEWEB_ACCESS_KEY: O9KZV9KM8O374PMDSB3B
+      TIMEWEB_SECRET_KEY: xZuqGdNblmQeO5qwp1KGmf4qnk6rzpBnVQdfqm8D
+      TIMEWEB_PICTURE_BUCKET_NAME: b3796de8-4f20eda2-4830-4205-9c76-4e512907542e
+
+    ports:
+      - "8003:8000"
+    volumes:
+      - ./PinService/src:/app/src
+      - ./PinService/alembic:/app/alembic
+    depends_on:
+      pin_postgres:
+        condition: service_healthy
+    networks:
+      - gateway-network
+      - pin-network
+
   gateway:
     build: Gateway
     environment:
@@ -127,6 +171,7 @@ services:
       - ./Gateway/src:/app/src
     depends_on:
       - auth_service
+      - pin_service
       - user_service
     networks:
       - gateway-network
@@ -134,6 +179,7 @@ services:
 volumes:
   auth_postgres_data:
   user_postgres_data:
+  pin_postgres_data:
   rabbitmq_user_auth_data:
 
 networks:
@@ -142,4 +188,6 @@ networks:
   gateway-network:
     driver: bridge
   user-network:
+    driver: bridge
+  pin-network:
     driver: bridge

@@ -1,5 +1,4 @@
 from contextlib import asynccontextmanager
-from posixpath import curdir
 
 import httpx
 from fastapi import Depends, FastAPI, HTTPException, Request, Response
