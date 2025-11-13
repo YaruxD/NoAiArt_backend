@@ -119,12 +119,15 @@ services:
       AUTH_SERVICE_HOST: auth_service
       AUTH_SERVICE_PORT: 8000
       JWT_PUBLIC_KEY_PATH: "src/keys/public.pem"
+      USER_SERVICE_HOST: user_service
+      USER_SERVICE_PORT: 8000
     ports:
       - "8000:8000"
     volumes:
       - ./Gateway/src:/app/src
     depends_on:
       - auth_service
+      - user_service
     networks:
       - gateway-network
 

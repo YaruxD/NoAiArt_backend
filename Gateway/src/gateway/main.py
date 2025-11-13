@@ -5,7 +5,8 @@ from fastapi import Depends, FastAPI, HTTPException, Request, Response
 from fastapi.security import OAuth2PasswordRequestForm
 
 from .clients.auth_client import auth_client
-from .schemas import RegistrationScheme, TokenScheme, UserRead
+from .clients.user_client import user_client
+from .schemas import RegistrationScheme, TokenScheme, UserRead, Profile, ProfileCard
 
 
 @asynccontextmanager
@@ -15,8 +16,9 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
+#AuthService
 
-@app.post("/auth/register", response_model=UserRead)
+@app.post("/auth/register", response_model=UserRead, tags=["Auth"])
 async def register_user(user_data: RegistrationScheme):
     try:
         return await auth_client.register(user_data=user_data)
@@ -27,7 +29,7 @@ async def register_user(user_data: RegistrationScheme):
         )
 
 
-@app.post("/auth/login", response_model=TokenScheme)
+@app.post("/auth/login",  tags=["Auth"], response_model=TokenScheme)
 async def login(response: Response, user_data: OAuth2PasswordRequestForm = Depends()):
     try:
         data = await auth_client.login(user_data=user_data)
@@ -52,7 +54,7 @@ async def login(response: Response, user_data: OAuth2PasswordRequestForm = Depen
         )
 
 
-@app.post("/auth/refresh", response_model=TokenScheme)
+@app.post("/auth/refresh", tags=["Auth"], response_model=TokenScheme)
 async def refresh_token(request: Request, response: Response):
     try:
         refresh_token = str(request.cookies.get("refresh_token"))
@@ -77,3 +79,21 @@ async def refresh_token(request: Request, response: Response):
         raise HTTPException(
             status_code=e.response.status_code, detail=error_json["detail"]
         )
+
+
+#UserService
+@app.get("/user/profile/{id}", tags=["Profile"], response_model=Profile, summary="Возвращает данные для основного профиля")
+async def get_profile(id: int):
+    try:
+        return await user_client.get_profile(id)
+    except httpx.HTTPStatusError as e:
+        detail = {"detail": e.response.text or "Ошибка получения профиля"}
+        raise HTTPException(status_code=e.response.status_code, detail=detail)
+
+@app.get("/user/profile/card/{id}", tags=["Profile"], response_model=ProfileCard, summary="Возвращает данные карточки профиля")
+async def get_profile_card(id: int):
+    try:
+        return await user_client.get_profile_card(id)
+    except:
+        detail = {"detail": e.response.text or "Ошибка получения профиля"}
+        raise HTTPException(status_code=e.response.status_code, detail=detail)

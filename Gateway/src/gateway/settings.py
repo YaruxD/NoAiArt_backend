@@ -14,6 +14,8 @@ class Settings(BaseSettings):
     JWT_PUBLIC_KEY: str = ""
 
     #настройка микросервисов (gateway)
+
+    #AuthService
     AUTH_SERVICE_HOST: str
     AUTH_SERVICE_PORT: str
     
@@ -21,12 +23,22 @@ class Settings(BaseSettings):
     def AUTH_SERVICE_URL(self):
         return f"http://{self.AUTH_SERVICE_HOST}:{self.AUTH_SERVICE_PORT}"
 
-
     def _load_key(self, key_path: str) -> str:
         path = Path(key_path)
         if not path.exists():
             raise FileNotFoundError(f"Key file not found: {path}")
         return path.read_text()
+    
+    #UserService
+    USER_SERVICE_HOST: str
+    USER_SERVICE_PORT: str
+    
+    @property
+    def USER_SERVICE_URL(self):
+        return f"http://{self.USER_SERVICE_HOST}:{self.USER_SERVICE_PORT}"
+
+
+    
 
     class Config:
         env_file = '.env'
