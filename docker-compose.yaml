@@ -156,6 +156,46 @@ services:
       - gateway-network
       - pin-network
 
+  #Comment
+  comment_postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: postgres_noaiart_comment
+      POSTGRES_USER: comment_postgres
+      POSTGRES_PASSWORD: 97121104
+    ports:
+      - "10003:5432"
+    volumes:
+      - comment_postgres_data:/var/lib/postgresql/data
+    networks:
+      - comment-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U comment_postgres -d postgres_noaiart_comment"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  comment_service:
+    build: CommentService
+    environment:
+      PORT: 8000
+      DB_USER: comment_postgres
+      DB_PASSWORD: 97121104
+      DB_HOST: comment_postgres
+      DB_PORT: 5432
+      DB_NAME: postgres_noaiart_comment
+    ports:
+      - "8004:8000"
+    volumes:
+      - ./CommentService/src:/app/src
+      - ./CommentService/alembic:/app/alembic
+    depends_on:
+      comment_postgres:
+        condition: service_healthy
+    networks:
+      - gateway-network
+      - comment-network
+
   gateway:
     build: Gateway
     environment:
@@ -173,6 +213,7 @@ services:
       - auth_service
       - pin_service
       - user_service
+      - comment_service
     networks:
       - gateway-network
 
@@ -181,6 +222,7 @@ volumes:
   user_postgres_data:
   pin_postgres_data:
   rabbitmq_user_auth_data:
+  comment_postgres_data:
 
 networks:
   auth-network:
@@ -190,4 +232,6 @@ networks:
   user-network:
     driver: bridge
   pin-network:
+    driver: bridge
+  comment-network:
     driver: bridge
