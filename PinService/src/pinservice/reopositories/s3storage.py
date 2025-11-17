@@ -15,8 +15,8 @@ class S3Client:
         bucket_name: str,
         access_key: str,
         secret_key: str,
-        endpoint_url: str = "https://s3.twcstorage.ru",  # Правильный endpoint
-        region: str = "ru-1",
+        endpoint_url: str,
+        region: str = "us-east-1",
     ):
         if not bucket_name:
             raise ValueError("Bucket name не может быть пустым")
@@ -29,7 +29,7 @@ class S3Client:
 
         self.config = Config(
             signature_version="s3v4",
-            s3={"addressing_style": "auto"},
+            s3={"addressing_style": "path"},  # Важно для MinIO
             region_name=region,
             max_pool_connections=50,
             connect_timeout=30,
@@ -43,7 +43,7 @@ class S3Client:
         self, file: UploadFile, user_id: str, max_size_mb: int = 10
     ) -> str:
         """
-        Загружает изображение пина в S3
+        Загружает изображение пина в S3/MinIO
 
         Args:
             file: Загружаемый файл
@@ -87,19 +87,18 @@ class S3Client:
                 endpoint_url=self.endpoint_url,
                 region_name=self.region,
                 config=self.config,
-            ) as client:
-                # Загружаем файл с явным указанием ACL
+            ) as client: #type: ignore
+                # Загружаем файл
                 await client.put_object(
                     Bucket=self.bucket_name,
                     Key=filename,
                     Body=file_content,
                     ContentType=file.content_type,
-                    ACL="public-read",  # Делаем файл публично доступным
                     CacheControl="max-age=31536000",
                     Metadata={"user_id": user_id, "uploaded_by": "pin_service"},
                 )
 
-            # Формируем публичный URL (path-style для TimeWeb)
+            # Формируем публичный URL для MinIO
             public_url = f"{self.endpoint_url}/{self.bucket_name}/{filename}"
 
             return public_url
@@ -136,14 +135,13 @@ class S3Client:
         Удаляет изображение из S3
 
         Args:
-            image_url: Полный URL изображения
+            image_url: Полный URL изображения или ключ
 
         Returns:
             True если удаление успешно, False в случае ошибки
         """
         try:
             # Извлекаем ключ из URL
-            # Формат: https://s3.timeweb.com/BUCKET_NAME/KEY
             if f"{self.endpoint_url}/{self.bucket_name}/" in image_url:
                 key = image_url.split(f"{self.endpoint_url}/{self.bucket_name}/")[-1]
             else:
@@ -157,7 +155,7 @@ class S3Client:
                 endpoint_url=self.endpoint_url,
                 region_name=self.region,
                 config=self.config,
-            ) as client:
+            ) as client: #type: ignore
                 await client.delete_object(Bucket=self.bucket_name, Key=key)
 
             return True
@@ -181,7 +179,7 @@ class S3Client:
                 endpoint_url=self.endpoint_url,
                 region_name=self.region,
                 config=self.config,
-            ) as client:
+            ) as client: #type: ignore
                 await client.head_bucket(Bucket=self.bucket_name)
             return True
         except ClientError as e:
@@ -202,7 +200,7 @@ class S3Client:
                 endpoint_url=self.endpoint_url,
                 region_name=self.region,
                 config=self.config,
-            ) as client:
+            ) as client: #type: ignore
                 response = await client.head_object(Bucket=self.bucket_name, Key=key)
                 return {
                     "size": response.get("ContentLength"),
@@ -233,7 +231,7 @@ class S3Client:
                 endpoint_url=self.endpoint_url,
                 region_name=self.region,
                 config=self.config,
-            ) as client:
+            ) as client: #type: ignore
                 response = await client.list_objects_v2(
                     Bucket=self.bucket_name, Prefix=prefix, MaxKeys=max_keys
                 )
@@ -253,11 +251,43 @@ class S3Client:
         except ClientError:
             return []
 
+    async def generate_presigned_url(
+        self, key: str, expiration: int = 3600
+    ) -> Optional[str]:
+        """
+        Генерирует временный URL для доступа к файлу
 
+        Args:
+            key: Ключ файла в S3
+            expiration: Время жизни URL в секундах (по умолчанию 1 час)
+
+        Returns:
+            Presigned URL или None в случае ошибки
+        """
+        try:
+            async with self.session.client(
+                "s3",
+                aws_access_key_id=self.access_key,
+                aws_secret_access_key=self.secret_key,
+                endpoint_url=self.endpoint_url,
+                region_name=self.region,
+                config=self.config,
+            ) as client: #type: ignore
+                url = await client.generate_presigned_url(
+                    "get_object",
+                    Params={"Bucket": self.bucket_name, "Key": key},
+                    ExpiresIn=expiration,
+                )
+                return url
+        except ClientError:
+            return None
+
+
+# Инициализация клиента с настройками из docker-compose
 s3_client = S3Client(
-    bucket_name=settings.TIMEWEB_PICTURE_BUCKET_NAME,
-    access_key=settings.TIMEWEB_ACCESS_KEY,
-    secret_key=settings.TIMEWEB_SECRET_KEY,
-    endpoint_url="https://s3.timeweb.com",
-    region="ru-1",
+    bucket_name=settings.S3_PICTURE_BUCKET_NAME,
+    access_key=settings.S3_ACCESS_KEY,
+    secret_key=settings.S3_SECRET_KEY,
+    endpoint_url=settings.S3_URL,
+    region="us-east-1",  # MinIO использует us-east-1 по умолчанию
 )

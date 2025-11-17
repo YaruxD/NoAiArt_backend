@@ -100,6 +100,6 @@ async def get_profile(id: int):
 async def get_profile_card(id: int):
     try:
         return await user_client.get_profile_card(id)
-    except:
+    except httpx.HTTPStatusError as e:
         detail = {"detail": e.response.text or "Ошибка получения профиля"}
         raise HTTPException(status_code=e.response.status_code, detail=detail)

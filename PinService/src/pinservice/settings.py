@@ -12,9 +12,10 @@ class Settings(BaseSettings):
     DB_NAME: str
 
     # s3
-    TIMEWEB_ACCESS_KEY: str
-    TIMEWEB_SECRET_KEY: str
-    TIMEWEB_PICTURE_BUCKET_NAME: str
+    S3_ACCESS_KEY: str
+    S3_SECRET_KEY: str
+    S3_PICTURE_BUCKET_NAME: str
+    S3_URL: str
 
     @property
     def DATABASE_URL_asyncpg(self):

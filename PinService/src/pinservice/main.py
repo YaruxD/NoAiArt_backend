@@ -1,6 +1,9 @@
 from contextlib import asynccontextmanager
-
-from fastapi import Depends, FastAPI, File, Form, UploadFile
+from typing import Optional
+from fastapi import Depends, FastAPI, Form, HTTPException, UploadFile, Query, status
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
+from typing import List
 
 from .database import get_session
 from .models import Pin
@@ -16,7 +19,39 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 
 
-@app.post("/")
-async def none(file: UploadFile, user_id=Form(), title=Form(), description=Form()):
-    await s3_client.upload_pin_image(user_id=user_id, file=file)
-    return {"message": "Hello World"}
+@app.post("/", summary="создать пин")
+async def create_pin(file: UploadFile,
+    user_id: int = Form(...),
+    title: str = Form(...),
+    description: str = Form(...),
+    cost: Optional[int] = Form(None),
+    db: AsyncSession = Depends(get_session)
+):
+    url = await s3_client.upload_pin_image(user_id=str(user_id), file=file)
+    
+    new_pin = Pin(
+        user_id=user_id,
+        image_url=url,
+        title=title,
+        description=description,
+        cost=cost if cost is not None else 0 
+    )
+    
+    db.add(new_pin)
+    await db.commit()
+    await db.refresh(new_pin)
+    
+    return new_pin
+
+
+@app.get("/")
+async def get_pins(
+    ids: List[int] = Query(default=None),
+    db: AsyncSession = Depends(get_session)
+):
+    if not ids:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
+    result = await db.execute(select(Pin).where(Pin.id.in_(ids)))
+    
+    pins = result.scalars().all()
+    return pins

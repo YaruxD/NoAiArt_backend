@@ -140,9 +140,10 @@ services:
       DB_HOST: pin_postgres
       DB_PORT: 5432
       DB_NAME: postgres_noaiart_pin
-      TIMEWEB_ACCESS_KEY: O9KZV9KM8O374PMDSB3B
-      TIMEWEB_SECRET_KEY: xZuqGdNblmQeO5qwp1KGmf4qnk6rzpBnVQdfqm8D
-      TIMEWEB_PICTURE_BUCKET_NAME: b3796de8-4f20eda2-4830-4205-9c76-4e512907542e
+      S3_ACCESS_KEY: admin
+      S3_SECRET_KEY: 97121104
+      S3_PICTURE_BUCKET_NAME: noaiartbucket
+      S3_S3_URL: http://minio:9000
 
     ports:
       - "8003:8000"
@@ -175,6 +176,38 @@ services:
       - user_service
     networks:
       - gateway-network
+
+  minio:
+    image: minio/minio
+    container_name: minio
+    ports:
+      - "11000:9000"  # API
+      - "11001:9001"  # Web UI
+    environment:
+      MINIO_ROOT_USER: admin
+      MINIO_ROOT_PASSWORD: 97121104
+    volumes:
+      - ./data:/data
+    command: server /data --console-address ":9001"
+
+    networks:
+     - pin-network
+
+  createbuckets:
+    image: minio/mc
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      until mc alias set local http://minio:9000 admin 97121104; do
+        echo 'Waiting for MinIO...'; 
+        sleep 2; 
+      done;
+      mc mb local/noaiartbucket || echo 'Bucket already exists';
+      mc anonymous set download local/noaiartbucket || echo 'Anonymous already set';
+      "
+    networks:
+     - pin-network
 
 volumes:
   auth_postgres_data:
