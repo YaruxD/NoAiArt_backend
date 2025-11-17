@@ -37,6 +37,13 @@ class Settings(BaseSettings):
     def USER_SERVICE_URL(self):
         return f"http://{self.USER_SERVICE_HOST}:{self.USER_SERVICE_PORT}"
 
+ #CommentService
+    COMMENT_SERVICE_HOST: str
+    COMMENT_SERVICE_PORT: str
+    
+    @property
+    def COMMENT_SERVICE_URL(self):
+        return f"http://{self.COMMENT_SERVICE_HOST}:{self.COMMENT_SERVICE_PORT}"
 
     
 

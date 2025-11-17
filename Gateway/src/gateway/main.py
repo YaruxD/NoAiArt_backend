@@ -7,6 +7,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from .auth import get_current_user
 from .clients.auth_client import auth_client
 from .clients.user_client import user_client
+from .clients.comment_client import comment_client
 from .schemas import RegistrationScheme, TokenScheme, UserRead, Profile, ProfileCard
 
 
@@ -100,6 +101,18 @@ async def get_profile(id: int):
 async def get_profile_card(id: int):
     try:
         return await user_client.get_profile_card(id)
-    except:
+    except httpx.HTTPStatusError as e:
         detail = {"detail": e.response.text or "Ошибка получения профиля"}
+        raise HTTPException(status_code=e.response.status_code, detail=detail)
+
+@app.get("/get_comment/{pin_id}")
+async def get_comments(
+    pin_id: int, 
+    limit: int = 3, 
+    offset: int = 0,
+    ):
+    try:
+        return await comment_client.get_comments(pin_id,limit,offset)
+    except httpx.HTTPStatusError as e:
+        detail = {"detail": e.response.text or "Ошибка получения коммента"}
         raise HTTPException(status_code=e.response.status_code, detail=detail)
