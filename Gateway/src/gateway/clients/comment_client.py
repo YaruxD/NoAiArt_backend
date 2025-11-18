@@ -24,10 +24,7 @@ class CommentServiceClient():
                 params={"limit": limit, "offset": offset},
                 timeout=self.timeout,
             )
-            try:
-                response.raise_for_status()
-            except httpx.HTTPStatusError as e:
-                logging.debug(f"Get comments failed: {response.text}")
-
+            response.raise_for_status()
             return response.json()
+            
 comment_client = CommentServiceClient()
