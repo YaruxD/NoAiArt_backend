@@ -20,11 +20,7 @@ class UserServiceClient:
                 f"{self.base_url}/profile/{id}",
                 timeout=self.timeout,
             )
-            try:
-                response.raise_for_status()
-            except httpx.HTTPStatusError as e:
-                logging.debug(f"Get profile failed: {response.text}")
-
+            response.raise_for_status()
             return response.json()
 
 
@@ -34,10 +30,7 @@ class UserServiceClient:
                 f"{self.base_url}/profile/card/{id}",
                 timeout=self.timeout,
             )
-            try:
-                response.raise_for_status()
-            except httpx.HTTPStatusError as e:
-                logging.debug(f"Get profile comment failed: {response.text}")
+            response.raise_for_status()
             return response.json()
 
 

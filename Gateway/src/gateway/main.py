@@ -95,7 +95,7 @@ async def get_profile(id: int):
         return await user_client.get_profile(id)
     except httpx.HTTPStatusError as e:
         detail = {"detail": e.response.text or "Ошибка получения профиля"}
-        raise HTTPException(status_code=e.response.status_code, detail=detail)
+        raise HTTPException(status_code=e.response.status_code)
 
 @app.get("/user/profile/card/{id}", tags=["Profile"], response_model=ProfileCard, summary="Возвращает данные карточки профиля")
 async def get_profile_card(id: int):
@@ -103,7 +103,7 @@ async def get_profile_card(id: int):
         return await user_client.get_profile_card(id)
     except httpx.HTTPStatusError as e:
         detail = {"detail": e.response.text or "Ошибка получения профиля"}
-        raise HTTPException(status_code=e.response.status_code, detail=detail)
+        raise HTTPException(status_code=e.response.status_code)
 
 @app.get("/get_comment/{pin_id}")
 async def get_comments(
@@ -115,4 +115,4 @@ async def get_comments(
         return await comment_client.get_comments(pin_id,limit,offset)
     except httpx.HTTPStatusError as e:
         detail = {"detail": e.response.text or "Ошибка получения коммента"}
-        raise HTTPException(status_code=e.response.status_code, detail=detail)
+        raise HTTPException(status_code=e.response.status_code)
