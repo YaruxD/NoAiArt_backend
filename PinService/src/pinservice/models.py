@@ -1,6 +1,6 @@
-from datetime import datetime, timezone
+from datetime import timezone, datetime
 
-from sqlalchemy import BigInteger, Column, DateTime, Integer, String, Text
+from sqlalchemy import BigInteger, Column, Date, Integer, String, Text
 from sqlalchemy.orm import declarative_base
 
 Base = declarative_base()
@@ -17,5 +17,5 @@ class Pin(Base):
     likes = Column(Integer, default=0)
     comments = Column(Integer, default=0)
     views = Column(Integer, default=0)
-    created_at = Column(DateTime, default=datetime.now(timezone.utc))
+    created_at = Column(Date, nullable=False, default=datetime.now(timezone.utc))
     cost = Column(Integer, default=0)
