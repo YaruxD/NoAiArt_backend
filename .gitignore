@@ -1,3 +1,4 @@
 keys
 .env
 __pycache__
+.minio.sys
