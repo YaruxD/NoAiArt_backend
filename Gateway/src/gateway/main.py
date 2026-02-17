@@ -3,13 +3,13 @@ from contextlib import asynccontextmanager
 import httpx
 from fastapi import Depends, FastAPI, HTTPException, Request, Response
 from fastapi.security import OAuth2PasswordRequestForm
-
 from .auth import get_current_user
 from .clients.auth_client import auth_client
 from .clients.user_client import user_client
 from .clients.comment_client import comment_client
 from .schemas import RegistrationScheme, TokenScheme, UserRead, Profile, ProfileCard
 
+from fastapi.middleware.cors import CORSMiddleware
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -18,6 +18,17 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins= [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+        ],
+    allow_credentials=True,
+
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 #AuthService
 
 @app.post("/auth/register", response_model=UserRead, tags=["Auth"])
@@ -44,7 +55,7 @@ async def login(response: Response, user_data: OAuth2PasswordRequestForm = Depen
             value=refresh_token,
             httponly=True,
             samesite="lax",
-            secure=True,
+            secure=False,  #менять на проде
             max_age=60 * 60 * 24 * 7,
         )
 
@@ -70,7 +81,7 @@ async def refresh_token(request: Request, response: Response):
             value=refresh_token,
             httponly=True,
             samesite="lax",
-            secure=True,
+            secure=False,  #менять на проде
             max_age=60 * 60 * 24 * 7,
         )
 
