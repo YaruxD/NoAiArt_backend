@@ -1,4 +1,5 @@
 keys
 .env
 __pycache__
-.minio.sys
+data/.minio.sys/
+.minio.sys/
