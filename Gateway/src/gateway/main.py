@@ -1,8 +1,12 @@
+from typing import List
 from contextlib import asynccontextmanager
 
 import httpx
 from fastapi import Depends, FastAPI, HTTPException, Request, Response
 from fastapi.security import OAuth2PasswordRequestForm
+from pydantic import BaseModel
+
+from .clients.pin_client import pin_client
 from .auth import get_current_user
 from .clients.auth_client import auth_client
 from .clients.user_client import user_client
@@ -128,4 +132,16 @@ async def get_comments(
         return await comment_client.get_comments(pin_id,limit,offset)
     except httpx.HTTPStatusError as e:
         detail = {"detail": e.response.text or "Ошибка получения коммента"}
+        raise HTTPException(status_code=e.response.status_code)
+
+
+class IdRequest(BaseModel):
+    ids: List[int]
+       
+@app.post("/get_list_of_pins")
+async def get_list_of_pins(pins: IdRequest):
+    try:
+        return await pin_client.get_list_of_pins(pins.ids)
+    except httpx.HTTPStatusError as e:
+        detail = {"detail": e.response.text or "Ошибка получения списка пинов"}
         raise HTTPException(status_code=e.response.status_code)

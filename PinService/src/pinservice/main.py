@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 from typing import Optional
 from fastapi import Depends, FastAPI, Form, HTTPException, UploadFile, Query, status
+from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from typing import List
@@ -43,8 +44,18 @@ async def create_pin(file: UploadFile,
     
     return new_pin
 
+class IdRequest(BaseModel):
+    ids: List[int]
 
-@app.get("/")
+
+
+@app.post("/list_pins", summary="получить пины по списку id")
+async def get_pins_batch(request: IdRequest, db: AsyncSession = Depends(get_session)):
+    result = await db.execute(select(Pin).where(Pin.id.in_(request.ids)))
+    return result.scalars().all()
+
+
+@app.get("/")    
 async def get_pins(
     ids: List[int] = Query(default=None),
     db: AsyncSession = Depends(get_session)

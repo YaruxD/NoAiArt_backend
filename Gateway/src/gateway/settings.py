@@ -50,4 +50,12 @@ class Settings(BaseSettings):
     class Config:
         env_file = '.env'
 
+#PinService
+    PIN_SERVICE_HOST: str
+    PIN_SERVICE_PORT: str
+    
+    @property
+    def PIN_SERVICE_URL(self):
+        return f"http://{self.PIN_SERVICE_HOST}:{self.PIN_SERVICE_PORT}"
+
 settings = Settings()
