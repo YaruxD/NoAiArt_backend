@@ -55,14 +55,3 @@ async def get_pins_batch(request: IdRequest, db: AsyncSession = Depends(get_sess
     return result.scalars().all()
 
 
-@app.get("/")    
-async def get_pins(
-    ids: List[int] = Query(default=None),
-    db: AsyncSession = Depends(get_session)
-):
-    if not ids:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
-    result = await db.execute(select(Pin).where(Pin.id.in_(ids)))
-    
-    pins = result.scalars().all()
-    return pins
