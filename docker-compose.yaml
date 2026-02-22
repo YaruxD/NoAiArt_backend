@@ -155,6 +155,10 @@ services:
     depends_on:
       pin_postgres:
         condition: service_healthy
+      qdrant:
+        condition: service_healthy
+      qdrant-init:
+        condition: service_completed_successfully
     networks:
       - gateway-network
       - pin-network
@@ -256,12 +260,34 @@ services:
     networks:
      - pin-network
 
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: qdrant
+    ports:
+      - "12000:6333"
+      - "12001:6334"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    restart: unless-stopped
+    environment:
+      - QDRANT__SERVICE__GRPC_PORT=6334
+      - QDRANT__SERVICE__HTTP_PORT=6333
+      - QDRANT__LOG_LEVEL=INFO
+    networks:
+      - pin-network
+    healthcheck:
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/localhost/6333 && echo -e 'GET / HTTP/1.1\r\nhost: localhost:6333\r\nConnection: close\r\n\r\n' >&3 && cat <&3 | head -n 1 | grep 200"]
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
 volumes:
   auth_postgres_data:
   user_postgres_data:
   pin_postgres_data:
   rabbitmq_user_auth_data:
   comment_postgres_data:
+  qdrant_data:
 
 networks:
   auth-network:
