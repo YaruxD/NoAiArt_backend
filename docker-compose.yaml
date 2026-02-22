@@ -157,8 +157,8 @@ services:
         condition: service_healthy
       qdrant:
         condition: service_healthy
-      qdrant-init:
-        condition: service_completed_successfully
+      qdrant-migrator:
+        condition: service_healthy
     networks:
       - gateway-network
       - pin-network
@@ -280,6 +280,37 @@ services:
       timeout: 10s
       retries: 3
       start_period: 30s
+
+  qdrant-migrator:
+    image: python:3.11-slim
+    container_name: qdrant-migrator
+    depends_on:
+      qdrant:
+        condition: service_healthy
+    environment:
+      QDRANT_URL: http://qdrant:6333
+      COLLECTION_NAME: images
+      VECTOR_SIZE: 512
+      PYTHONUNBUFFERED: 1
+    volumes:
+      - ./initscripts:/initscripts
+    working_dir: /initscripts
+    command: >
+      sh -c "
+      apt-get update -qq && apt-get install -y -qq curl &&
+      pip install --no-cache-dir --quiet qdrant-client==1.9.0 pydantic==2.5.0 pydantic-settings==2.1.0 &&
+      python -u qdrant_migration.py
+      "
+    networks:
+      - pin-network
+    healthcheck:
+      test: ["CMD", "sh", "-c", "curl -s -o /dev/null -w '%{http_code}' http://qdrant:6333/collections/images | grep -q 200"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+
 
 volumes:
   auth_postgres_data:
