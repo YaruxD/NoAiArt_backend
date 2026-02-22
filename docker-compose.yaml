@@ -158,7 +158,7 @@ services:
       qdrant:
         condition: service_healthy
       qdrant-migrator:
-        condition: service_healthy
+        condition: service_completed_successfully 
     networks:
       - gateway-network
       - pin-network
@@ -343,12 +343,7 @@ services:
       "
     networks:
       - pin-network
-    healthcheck:
-      test: ["CMD", "sh", "-c", "curl -s -o /dev/null -w '%{http_code}' http://qdrant:6333/collections/images | grep -q 200"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-      start_period: 5s
+
 
 
 
