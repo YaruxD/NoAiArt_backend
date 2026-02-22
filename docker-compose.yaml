@@ -199,6 +199,46 @@ services:
       - gateway-network
       - comment-network
 
+  #Board
+  board_postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: postgres_noaiart_board
+      POSTGRES_USER: board_postgres
+      POSTGRES_PASSWORD: 97121104
+    ports:
+      - "10004:5432"
+    volumes:
+      - board_postgres_data:/var/lib/postgresql/data
+    networks:
+      - board-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U board_postgres -d postgres_noaiart_board"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  board_service:
+    build: BoardService
+    environment:
+      PORT: 8000
+      DB_USER: board_postgres
+      DB_PASSWORD: 97121104
+      DB_HOST: board_postgres
+      DB_PORT: 5432
+      DB_NAME: postgres_noaiart_board
+    ports:
+      - "8005:8000"
+    volumes:
+      - ./BoardService/src:/app/src
+      - ./BoardService/alembic:/app/alembic
+    depends_on:
+      board_postgres:
+        condition: service_healthy
+    networks:
+      - gateway-network
+      - board-network
+
   gateway:
     build: Gateway
     environment:
@@ -262,6 +302,7 @@ volumes:
   pin_postgres_data:
   rabbitmq_user_auth_data:
   comment_postgres_data:
+  board_postgres_data:
 
 networks:
   auth-network:
@@ -273,4 +314,6 @@ networks:
   pin-network:
     driver: bridge
   comment-network:
+    driver: bridge
+  board-network:
     driver: bridge
