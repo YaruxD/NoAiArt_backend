@@ -1,0 +1,27 @@
+FROM python:3.12.7-slim
+
+WORKDIR /app
+
+COPY pyproject.toml poetry.lock ./
+
+RUN pip install --no-cache-dir poetry \
+    && poetry config virtualenvs.create false \
+    && poetry install --no-root --no-interaction --no-ansi
+
+COPY . .
+
+ENV PORT=8000
+ENV NEO4J_URI=bolt://neo4j:7687
+ENV NEO4J_USER=neo4j
+ENV NEO4J_PASSWORD=97121104
+
+ENV RBC_FOLLOW_AUTH_USER = admin
+ENV RBC_FOLLOW_AUTH_PASSWORD = 97121104
+ENV RBC_FOLLOW_AUTH_HOST = rabbitmq_user_auth
+ENV RBC_FOLLOW_AUTH_PORT = 5672
+
+
+
+EXPOSE 8000
+
+CMD ["sh", "-c", "uvicorn src.followservice.main:app --host 0.0.0.0 --port ${PORT}"]

@@ -12,6 +12,7 @@ services:
     networks:
       - user-network
       - auth-network
+      - follow-network
     healthcheck:
       test: ["CMD", "rabbitmqctl", "status"]
       interval: 10s
@@ -54,6 +55,10 @@ services:
       RBP_USER_AUTH_PASSWORD: 97121104
       RBP_USER_AUTH_HOST: rabbitmq_user_auth
       RBP_USER_AUTH_PORT: 5672
+      RBP_FOLLOW_AUTH_USER: admin
+      RBP_FOLLOW_AUTH_PASSWORD: 97121104
+      RBP_FOLLOW_AUTH_HOST: rabbitmq_user_auth
+      RBP_FOLLOW_AUTH_PORT: 5672
     ports:
       - "8001:8000"
     volumes:
@@ -242,7 +247,30 @@ services:
     networks:
       - gateway-network
       - board-network
-
+    
+  #Follow
+  follow_service:
+    build: FollowService
+    environment:
+      PORT: 8000
+      NEO4J_URI: bolt://neo4j:7687
+      NEO4J_USER: neo4j
+      NEO4J_PASSWORD: 97121104
+      RBC_FOLLOW_AUTH_USER: admin
+      RBC_FOLLOW_AUTH_PASSWORD: 97121104
+      RBC_FOLLOW_AUTH_HOST: rabbitmq_user_auth
+      RBC_FOLLOW_AUTH_PORT: 5672
+    ports:
+        - "8006:8000"
+    depends_on:
+      neo4j:
+        condition: service_healthy
+      rabbitmq_user_auth:
+        condition: service_healthy
+    networks:
+      - gateway-network
+      - follow-network
+      
   gateway:
     build: Gateway
     environment:
@@ -382,6 +410,29 @@ services:
       - kafka
     networks:
       - pin-network
+    
+  
+  neo4j:
+    image: neo4j:5
+    container_name: neo4j
+    ports:
+      - "13000:7687"  
+      - "13001:7474"  
+    environment:
+      NEO4J_AUTH: neo4j/97121104
+      NEO4J_dbms_security_auth__enabled: "true"
+      NEO4J_dbms_memory_heap_initial__size: 512m
+      NEO4J_dbms_memory_heap_max__size: 1G
+    volumes:
+      - neo4j_data:/data
+      - neo4j_logs:/logs
+    networks: 
+      - follow-network  
+    healthcheck:
+      test: ["CMD-SHELL", "cypher-shell -u neo4j -p 97121104 'RETURN 1'"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 
 
@@ -395,6 +446,8 @@ volumes:
   qdrant_data:
   board_postgres_data:
   kafka-data:
+  neo4j_data:
+  neo4j_logs:
 
 networks:
   auth-network:
@@ -408,4 +461,6 @@ networks:
   comment-network:
     driver: bridge
   board-network:
+    driver: bridge
+  follow-network:
     driver: bridge

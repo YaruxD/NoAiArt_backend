@@ -22,7 +22,12 @@ class Settings(BaseSettings):
     RBP_USER_AUTH_PASSWORD: str
     RBP_USER_AUTH_HOST: str
     RBP_USER_AUTH_PORT: str
-    
+
+    # настройки producer_follow_auth
+    RBP_FOLLOW_AUTH_USER: str
+    RBP_FOLLOW_AUTH_PASSWORD: str
+    RBP_FOLLOW_AUTH_HOST: str
+    RBP_FOLLOW_AUTH_PORT: str
 
     # jwt
     JWT_PRIVATE_KEY_PATH: str 
@@ -41,6 +46,10 @@ class Settings(BaseSettings):
     def RBP_USER_AUTH_URL(self):
         return f"amqp://{self.RBP_USER_AUTH_USER}:{self.RBP_USER_AUTH_PASSWORD}@{self.RBP_USER_AUTH_HOST}:{self.RBP_USER_AUTH_PORT}"
     
+    @property
+    def RBP_FOLLOW_AUTH_URL(self):
+        return f"amqp://{self.RBP_FOLLOW_AUTH_USER}:{self.RBP_FOLLOW_AUTH_PASSWORD}@{self.RBP_FOLLOW_AUTH_HOST}:{self.RBP_FOLLOW_AUTH_PORT}"
+
     def _load_key(self, key_path: str) -> str:
         path = Path(key_path)
         if not path.exists():

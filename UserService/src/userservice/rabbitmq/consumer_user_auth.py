@@ -6,7 +6,7 @@ from ..database import sessionmaker
 from ..models import User
 
 class RBC_USER_AUTH:
-    def __init__(self, amqp_url: str = settings.RBC_USER_AUTH_URL, queue_name: str = "user_add"):
+    def __init__(self, amqp_url: str = settings.RBC_USER_AUTH_URL, queue_name: str = "user_add_user"):
         self.amqp_url = amqp_url
         self.queue_name = queue_name
         self.connection: aio_pika.RobustConnection | None = None

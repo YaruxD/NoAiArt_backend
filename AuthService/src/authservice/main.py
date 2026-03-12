@@ -14,6 +14,7 @@ from .auth import (
 from .database import engine, get_session
 from .models import User
 from .rabbitmq.producer_user_auth import send_message_to_userservice
+from .rabbitmq.producer_follow_auth import send_message_to_followservice
 from .schemas import LogoutResponse, RegistrationScheme, TokenScheme, UserRead
 from .security import hash_password
 
@@ -54,9 +55,14 @@ async def create_user(
 
     await db.commit()
     await db.refresh(new_user)
-    user_to_add = user.dict(exclude={"password", "email"})
-    user_to_add["id"] = new_user.id
-    await send_message_to_userservice(user_to_add)
+    user_to_add_userservice = user.dict(exclude={"password", "email"})
+    user_to_add_userservice["id"] = new_user.id
+    await send_message_to_userservice(user_to_add_userservice)
+
+    user_to_add_followservice = user.dict(exclude={"password", "email"})
+    user_to_add_followservice["id"] = new_user.id
+    await send_message_to_followservice(user_to_add_followservice)
+
 
     return new_user
 
